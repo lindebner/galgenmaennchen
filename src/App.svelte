@@ -21,6 +21,51 @@
 
   type GameState = 'playing' | 'won' | 'lost';
 
+  interface SavedState {
+    word: string;
+    hint: string;
+    guessed: string[];
+    wrongCount: number;
+    gameState: GameState;
+  }
+
+  const STORAGE_KEY = 'galgenmaennchen';
+
+  function loadState(): SavedState | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as SavedState;
+      if (
+        typeof parsed.word !== 'string' ||
+        typeof parsed.hint !== 'string' ||
+        !Array.isArray(parsed.guessed) ||
+        typeof parsed.wrongCount !== 'number' ||
+        typeof parsed.gameState !== 'string'
+      ) {
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveState() {
+    const state: SavedState = {
+      word,
+      hint,
+      guessed: [...guessed],
+      wrongCount,
+      gameState,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   let word = $state('');
   let hint = $state('');
   let guessed = $state<Set<string>>(new Set());
@@ -39,6 +84,7 @@
     guessed = new Set();
     wrongCount = 0;
     gameState = 'playing';
+    saveState();
   }
 
   function guess(letter: string) {
@@ -58,6 +104,7 @@
     } else if (word.split('').every((l) => next.has(l))) {
       gameState = 'won';
     }
+    saveState();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -78,7 +125,17 @@
     }
   }
 
-  startNewGame();
+  // Restore from local storage, or start fresh
+  const saved = loadState();
+  if (saved) {
+    word = saved.word;
+    hint = saved.hint;
+    guessed = new Set(saved.guessed);
+    wrongCount = saved.wrongCount;
+    gameState = saved.gameState;
+  } else {
+    startNewGame();
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
