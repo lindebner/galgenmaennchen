@@ -1,40 +1,53 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
+  --text: #8b8398;
+  --text-h: #2d1b3d;
+  --bg: #fef0f6;
+  --border: #f3d9e8;
+  --code-bg: #fce7f3;
 
-  --accent: #2563eb;
-  --accent-bg: rgba(37, 99, 235, 0.1);
-  --accent-border: rgba(37, 99, 235, 0.4);
+  --accent: #ec4899;
+  --accent-bg: rgba(236, 72, 153, 0.1);
+  --accent-border: rgba(236, 72, 153, 0.35);
 
-  --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.1);
-  --success-border: rgba(22, 163, 74, 0.4);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.35);
 
-  --error: #dc2626;
-  --error-bg: rgba(220, 38, 38, 0.1);
-  --error-border: rgba(220, 38, 38, 0.4);
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.35);
 
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.1);
-  --warning-border: rgba(217, 119, 6, 0.4);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.35);
 
-  --secondary: #0891b2;
-  --secondary-bg: rgba(8, 145, 178, 0.1);
-  --secondary-border: rgba(8, 145, 178, 0.4);
+  --secondary: #a78bfa;
+  --secondary-bg: rgba(167, 139, 250, 0.12);
+  --secondary-border: rgba(167, 139, 250, 0.4);
+
+  --pink: #ec4899;
+  --pink-light: #f9a8d4;
+  --pink-dark: #db2777;
+  --lavender: #a78bfa;
+  --lavender-light: #c4b5fd;
+  --lavender-dark: #8b5cf6;
+
+  --gradient-pink: linear-gradient(135deg, #ec4899, #f472b6);
+  --gradient-lavender: linear-gradient(135deg, #a78bfa, #c4b5fd);
+  --gradient-mixed: linear-gradient(135deg, #ec4899 0%, #a78bfa 100%);
 
   --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+    rgba(236, 72, 153, 0.15) 0 10px 25px -5px, rgba(167, 139, 250, 0.1) 0 4px 10px -2px;
+  --shadow-soft:
+    rgba(236, 72, 153, 0.08) 0 4px 15px -3px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Quicksand', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Quicksand', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/150% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -47,33 +60,13 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-
-    --accent: #60a5fa;
-    --accent-bg: rgba(96, 165, 250, 0.15);
-    --accent-border: rgba(96, 165, 250, 0.4);
-
-    --success: #4ade80;
-    --success-bg: rgba(74, 222, 128, 0.12);
-    --success-border: rgba(74, 222, 128, 0.35);
-
-    --error: #f87171;
-    --error-bg: rgba(248, 113, 113, 0.12);
-    --error-border: rgba(248, 113, 113, 0.35);
-
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-}
-
 body {
   margin: 0;
+  background:
+    radial-gradient(ellipse at top left, rgba(236, 72, 153, 0.12), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(167, 139, 250, 0.15), transparent 50%),
+    var(--bg);
+  min-height: 100svh;
 }
 
 #app {

@@ -58,14 +58,14 @@
   }
 
   .gallows {
-    stroke: var(--text-h);
+    stroke: var(--lavender);
     stroke-width: 5;
     stroke-linecap: round;
     fill: none;
   }
 
   .figure {
-    stroke: var(--error);
+    stroke: var(--pink);
     stroke-width: 5;
     stroke-linecap: round;
     fill: none;

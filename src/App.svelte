@@ -237,14 +237,18 @@
   }
 
   .game-header {
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
 
   .game-header h1 {
-    font-size: 42px;
+    font-size: 48px;
     font-weight: 700;
     letter-spacing: -1px;
-    margin: 0 0 4px;
+    margin: 0 0 6px;
+    background: var(--gradient-mixed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .subtitle {
@@ -266,6 +270,12 @@
     align-items: center;
     gap: 16px;
     flex-shrink: 0;
+    padding: 24px 20px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(236, 72, 153, 0.12);
+    box-shadow: var(--shadow-soft);
   }
 
   .lives {
@@ -285,7 +295,7 @@
   .lives-count {
     font-size: 22px;
     font-weight: 700;
-    color: var(--text-h);
+    color: var(--lavender-dark);
     font-variant-numeric: tabular-nums;
   }
 
@@ -311,9 +321,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     color: var(--error);
@@ -333,10 +343,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    background: var(--accent-bg);
-    border: 1px solid var(--accent-border);
+    padding: 12px 20px;
+    border-radius: 16px;
+    background: var(--secondary-bg);
+    border: 1px solid var(--secondary-border);
     max-width: 100%;
   }
 
@@ -345,7 +355,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--accent);
+    color: var(--lavender-dark);
     flex-shrink: 0;
   }
 
@@ -356,10 +366,10 @@
 
   .word-display {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
-    padding: 8px 0;
+    padding: 12px 0;
     margin: 4px 0;
   }
 
@@ -367,9 +377,9 @@
     display: inline-flex;
     align-items: flex-end;
     justify-content: center;
-    width: 32px;
-    height: 44px;
-    border-bottom: 3px solid var(--text-h);
+    width: 36px;
+    height: 48px;
+    border-bottom: 3px solid var(--lavender);
     font-size: 26px;
     font-weight: 700;
     color: var(--text-h);
@@ -397,8 +407,8 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    padding: 20px 28px;
-    border-radius: 12px;
+    padding: 24px 32px;
+    border-radius: 20px;
     animation: fade-in 0.35s ease-out;
   }
 
@@ -413,7 +423,7 @@
   }
 
   .result-title {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
   }
 
@@ -436,20 +446,21 @@
 
   .play-again {
     margin-top: 10px;
-    padding: 10px 28px;
-    border-radius: 8px;
+    padding: 12px 32px;
+    border-radius: 14px;
     border: none;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    background: var(--accent);
+    background: var(--gradient-pink);
     color: #fff;
     transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: var(--shadow-soft);
   }
 
   .play-again:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
   }
 
   .play-again:active {
@@ -470,7 +481,7 @@
   .keyboard {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 7px;
     max-width: 560px;
     width: 100%;
   }
@@ -478,25 +489,26 @@
   .key-row {
     display: flex;
     justify-content: center;
-    gap: 6px;
+    gap: 7px;
   }
 
   .key {
     width: 42px;
-    height: 42px;
-    border-radius: 8px;
+    height: 46px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    background: var(--code-bg);
+    background: rgba(255, 255, 255, 0.7);
     color: var(--text-h);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, transform 0.1s, border-color 0.15s;
+    transition: background 0.15s, transform 0.1s, border-color 0.15s, box-shadow 0.15s;
   }
 
   .key:hover:not(:disabled) {
     border-color: var(--accent-border);
     background: var(--accent-bg);
+    box-shadow: var(--shadow-soft);
   }
 
   .key:active:not(:disabled) {
@@ -517,7 +529,7 @@
     background: var(--error-bg);
     border-color: var(--error-border);
     color: var(--error);
-    opacity: 0.6;
+    opacity: 0.55;
   }
 
   @keyframes fade-in {
@@ -533,18 +545,19 @@
     }
 
     .game-header h1 {
-      font-size: 32px;
+      font-size: 36px;
     }
 
     .key {
       width: 34px;
-      height: 34px;
+      height: 38px;
       font-size: 14px;
+      border-radius: 10px;
     }
 
     .letter-slot {
-      width: 26px;
-      height: 38px;
+      width: 28px;
+      height: 40px;
       font-size: 22px;
     }
   }
@@ -552,7 +565,7 @@
   @media (max-width: 420px) {
     .key {
       width: 28px;
-      height: 28px;
+      height: 32px;
       font-size: 12px;
     }
 
