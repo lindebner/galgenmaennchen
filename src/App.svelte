@@ -3,6 +3,7 @@
   import HangmanCanvas from './lib/HangmanCanvas.svelte';
 
   const MAX_WRONG = 6;
+  const MAX_HINTS = 3;
 
   const KEY_ROWS: string[][] = [
     ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', 'Ü'],
@@ -27,6 +28,7 @@
     guessed: string[];
     wrongCount: number;
     gameState: GameState;
+    hintsUsed?: number;
   }
 
   const STORAGE_KEY = 'galgenmaennchen';
@@ -58,6 +60,7 @@
       guessed: [...guessed],
       wrongCount,
       gameState,
+      hintsUsed,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -71,6 +74,7 @@
   let guessed = $state<Set<string>>(new Set());
   let wrongCount = $state(0);
   let gameState = $state<GameState>('playing');
+  let hintsUsed = $state(0);
 
   let revealed = $derived(word.split('').map((l) => (guessed.has(l) ? l : null)));
   let wrongLetters = $derived(
@@ -83,6 +87,7 @@
     hint = entry.hint;
     guessed = new Set();
     wrongCount = 0;
+    hintsUsed = 0;
     gameState = 'playing';
     saveState();
   }
@@ -112,8 +117,9 @@
   ) as string[];
 
   function revealHint() {
-    if (gameState !== 'playing' || hintLetters.length === 0) return;
+    if (gameState !== 'playing' || hintsUsed >= MAX_HINTS || hintLetters.length === 0) return;
     const letter = hintLetters[Math.floor(Math.random() * hintLetters.length)];
+    hintsUsed += 1;
     guess(letter);
   }
 
@@ -143,6 +149,7 @@
     guessed = new Set(saved.guessed);
     wrongCount = saved.wrongCount;
     gameState = saved.gameState;
+    hintsUsed = saved.hintsUsed ?? 0;
   } else {
     startNewGame();
   }
@@ -232,8 +239,12 @@
             </div>
           {/each}
         </div>
-        <button class="help-button" onclick={revealHint} disabled={hintLetters.length === 0}>
-          Hilfe: Buchstabe aufdecken
+        <button
+          class="help-button"
+          onclick={revealHint}
+          disabled={hintsUsed >= MAX_HINTS || hintLetters.length === 0}
+        >
+          Hilfe: Buchstabe aufdecken ({MAX_HINTS - hintsUsed} übrig)
         </button>
         <p class="type-hint">Du kannst auch direkt auf der Tastatur tippen</p>
       {/if}
@@ -258,7 +269,7 @@
     font-weight: 700;
     letter-spacing: -1px;
     margin: 0 0 6px;
-    color: var(--text-h);
+    color: var(--pink-dark);
   }
 
   .subtitle {

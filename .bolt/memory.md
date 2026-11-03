@@ -13,17 +13,19 @@
 ## Visual design & UX direction
 
 - Background uses light/pale pink tones.
-- Headline was a pale pink-to-lavender gradient text; low contrast against the light pink background made it nearly invisible.
-- Headline now uses a solid dark purple-brown color for strong contrast and readability.
+- Headline color iterated through: pale pink-to-lavender gradient (invisible) → solid dark purple-brown → solid deep pink (current).
+- Current headline: solid deep pink that matches/coordinates with the page theme while maintaining readability.
 - Preference: text contrast takes priority over decorative gradient treatments.
 - Avoid low-contrast text-on-background combinations generally.
+- Preference: headline color should harmonize with the pink theme rather than use unrelated dark colors.
 
 ## Decisions, constraints & rationale
 
-- Switched headline from gradient to solid dark color because the original gradient washed out against the pale pink background.
+- Gradient headline abandoned: washed out against pale pink background.
+- Dark purple-brown headline replaced with deep pink per user request for a matching pink tone.
 - No visual browser preview available in this environment; changes validated via build success only, not visual confirmation.
 
 ## Open questions & assumptions
 
-- Assumes the solid dark purple-brown meets WCAG contrast requirements against the pale pink background (not verified).
+- Assumes the deep pink headline meets adequate contrast against the pale pink background (not visually verified).
 - No explicit `.bolt/prompt` instructions exist yet; visual direction is inferred from observed codebase and user feedback.
