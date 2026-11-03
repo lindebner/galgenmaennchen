@@ -6,6 +6,7 @@ export interface RoomPlayer {
   seat: Seat;
   name: string | null;
   score: number;
+  avatar: string | null;
 }
 
 export interface RoomView {
@@ -36,6 +37,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_name: 'Bitte gib einen Namen mit 1 bis 20 Zeichen ein.',
   invalid_word: 'Das Wort konnte nicht gespeichert werden.',
   invalid_letter: 'Dieser Buchstabe ist ungültig.',
+  invalid_avatar: 'Bitte wähle eine Figur aus.',
+  avatar_taken: 'Diese Figur ist schon vergeben. Wähle eine andere.',
 };
 
 let client: SupabaseClient | null = null;
@@ -76,17 +79,33 @@ export function messageFromError(error: unknown): string {
   return error instanceof Error ? error.message : GENERIC_ERROR;
 }
 
-export function createRoom(playerId: string, name: string, entry: WordEntry): Promise<RoomView> {
+export function createRoom(
+  playerId: string,
+  name: string,
+  avatar: string,
+  entry: WordEntry,
+): Promise<RoomView> {
   return callRoom('create_room', {
     p_player: playerId,
     p_name: name,
+    p_avatar: avatar,
     p_word: entry.word,
     p_hint: entry.hint,
   });
 }
 
-export function joinRoom(code: string, playerId: string, name: string): Promise<RoomView> {
-  return callRoom('join_room', { p_code: code, p_player: playerId, p_name: name });
+export function joinRoom(
+  code: string,
+  playerId: string,
+  name: string,
+  avatar: string,
+): Promise<RoomView> {
+  return callRoom('join_room', {
+    p_code: code,
+    p_player: playerId,
+    p_name: name,
+    p_avatar: avatar,
+  });
 }
 
 export function getRoom(code: string, playerId: string): Promise<RoomView> {

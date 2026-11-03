@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getRandomWord } from '../words';
   import { createRoom, joinRoom, messageFromError, type RoomView } from '../online/roomApi';
+  import AvatarPicker from '../AvatarPicker.svelte';
 
   interface Props {
     playerId: string;
@@ -11,12 +12,13 @@
 
   let name = $state('');
   let code = $state('');
+  let avatar = $state<string | null>(null);
   let busy = $state(false);
   let errorMessage = $state('');
 
   let trimmedName = $derived(name.trim());
-  let canJoin = $derived(trimmedName.length > 0 && code.trim().length === 6 && !busy);
-  let canCreate = $derived(trimmedName.length > 0 && !busy);
+  let canJoin = $derived(trimmedName.length > 0 && code.trim().length === 6 && avatar !== null && !busy);
+  let canCreate = $derived(trimmedName.length > 0 && avatar !== null && !busy);
 
   async function run(action: () => Promise<RoomView>) {
     busy = true;
@@ -31,11 +33,15 @@
   }
 
   function createGame() {
-    run(() => createRoom(playerId, trimmedName, getRandomWord()));
+    if (avatar === null) return;
+    const chosen = avatar;
+    run(() => createRoom(playerId, trimmedName, chosen, getRandomWord()));
   }
 
   function joinGame() {
-    run(() => joinRoom(code.trim().toUpperCase(), playerId, trimmedName));
+    if (avatar === null) return;
+    const chosen = avatar;
+    run(() => joinRoom(code.trim().toUpperCase(), playerId, trimmedName, chosen));
   }
 </script>
 
@@ -44,6 +50,11 @@
     <span>Dein Name</span>
     <input bind:value={name} maxlength="20" placeholder="z. B. Anna" autocomplete="off" />
   </label>
+
+  <div class="avatar-step">
+    <span class="step-label">Wähle deine Figur</span>
+    <AvatarPicker selected={avatar} onselect={(id) => (avatar = id)} />
+  </div>
 
   <div class="lobby-cards">
     <section class="lobby-card">
@@ -115,6 +126,19 @@
     letter-spacing: 4px;
     font-family: var(--mono);
     font-weight: 700;
+  }
+
+  .avatar-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .step-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-h);
   }
 
   .lobby-cards {

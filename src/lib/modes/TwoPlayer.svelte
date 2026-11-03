@@ -7,6 +7,8 @@
     wrongLettersOf,
     type Seat,
   } from '../gameRules';
+  import { avatarEmoji } from '../avatars';
+  import AvatarPicker from '../AvatarPicker.svelte';
   import GameLayout from '../GameLayout.svelte';
   import GallowsPanel from '../GallowsPanel.svelte';
   import HintBox from '../HintBox.svelte';
@@ -16,6 +18,7 @@
   import Scoreboard from '../Scoreboard.svelte';
 
   const STORAGE_KEY = 'galgenmaennchen-zwei';
+  const seats: Seat[] = [1, 2];
 
   type GameState = 'playing' | 'won' | 'lost';
 
@@ -28,6 +31,7 @@
     turn: Seat;
     starter: Seat;
     scores: Record<Seat, number>;
+    avatars: Record<Seat, string>;
   }
 
   function loadState(): SavedState | null {
@@ -39,7 +43,9 @@
         typeof parsed.word !== 'string' ||
         !Array.isArray(parsed.guessed) ||
         typeof parsed.wrongCount !== 'number' ||
-        !parsed.scores
+        !parsed.scores ||
+        !parsed.avatars?.[1] ||
+        !parsed.avatars?.[2]
       ) {
         return null;
       }
@@ -59,6 +65,7 @@
       turn,
       starter,
       scores,
+      avatars: { 1: avatars[1] ?? '', 2: avatars[2] ?? '' },
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -79,13 +86,16 @@
   let turn = $state<Seat>(1);
   let starter = $state<Seat>(2);
   let scores = $state<Record<Seat, number>>({ 1: 0, 2: 0 });
+  let avatars = $state<Record<Seat, string | null>>({ 1: null, 2: null });
+  let setupDone = $state(false);
 
   let correctLetters = $derived(new Set(word));
   let wrongLetters = $derived(wrongLettersOf(word, guessed));
   let slots = $derived(buildSlots(word, guessed, gameState === 'lost'));
   let scoreboardPlayers = $derived(
-    ([1, 2] as Seat[]).map((seat) => ({
+    seats.map((seat) => ({
       name: `Spieler ${seat}`,
+      emoji: avatarEmoji(avatars[seat]),
       score: scores[seat],
       active: gameState === 'playing' && turn === seat,
     })),
@@ -101,6 +111,13 @@
     starter = other(starter);
     turn = starter;
     saveState();
+  }
+
+  function startGame() {
+    setupDone = true;
+    scores = { 1: 0, 2: 0 };
+    starter = 2;
+    startNewRound();
   }
 
   function guess(letter: string) {
@@ -128,6 +145,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (!setupDone) return;
     if (event.key === 'Enter' && gameState !== 'playing') {
       startNewRound();
       return;
@@ -146,40 +164,140 @@
     turn = saved.turn;
     starter = saved.starter;
     scores = saved.scores;
-  } else {
-    startNewRound();
+    avatars = { 1: saved.avatars[1], 2: saved.avatars[2] };
+    setupDone = true;
   }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<Scoreboard players={scoreboardPlayers} />
+{#if !setupDone}
+  <section class="setup">
+    <h2 class="setup-title">Figuren wählen</h2>
+    <p class="setup-text">Jeder Spieler wählt eine eigene Figur.</p>
 
-<GameLayout>
-  {#snippet left()}
-    <GallowsPanel {wrongCount} {wrongLetters} />
-  {/snippet}
+    <div class="setup-players">
+      {#each seats as seat (seat)}
+        <div class="setup-player">
+          <span class="setup-label">Spieler {seat}</span>
+          <AvatarPicker
+            selected={avatars[seat]}
+            unavailable={avatars[other(seat)]}
+            onselect={(id) => (avatars[seat] = id)}
+          />
+        </div>
+      {/each}
+    </div>
 
-  <HintBox {hint} />
-
-  <WordDisplay {slots} />
-
-  {#if gameState === 'playing'}
-    <Keyboard guessed={guessed} correct={correctLetters} onguess={guess} />
-  {:else}
-    <ResultBanner
-      tone={gameState === 'won' ? 'win' : 'lose'}
-      title={gameState === 'won' ? 'Gewonnen!' : 'Verloren'}
-      nextLabel="Nächste Runde"
-      onnext={startNewRound}
+    <button
+      class="start-button"
+      onclick={startGame}
+      disabled={avatars[1] === null || avatars[2] === null}
     >
-      {#snippet detail()}
-        {#if gameState === 'won'}
-          Spieler {turn} hat das Wort erraten und bekommt einen Punkt.
-        {:else}
-          Niemand hat das Wort erraten. Das Wort war <strong>{word}</strong>
-        {/if}
-      {/snippet}
-    </ResultBanner>
-  {/if}
-</GameLayout>
+      Spiel starten
+    </button>
+  </section>
+{:else}
+  <Scoreboard players={scoreboardPlayers} />
+
+  <GameLayout>
+    {#snippet left()}
+      <GallowsPanel {wrongCount} {wrongLetters} />
+    {/snippet}
+
+    <HintBox {hint} />
+
+    <WordDisplay {slots} />
+
+    {#if gameState === 'playing'}
+      <Keyboard guessed={guessed} correct={correctLetters} onguess={guess} />
+    {:else}
+      <ResultBanner
+        tone={gameState === 'won' ? 'win' : 'lose'}
+        title={gameState === 'won' ? 'Gewonnen!' : 'Verloren'}
+        nextLabel="Nächste Runde"
+        onnext={startNewRound}
+      >
+        {#snippet detail()}
+          {#if gameState === 'won'}
+            Spieler {turn} hat das Wort erraten und bekommt einen Punkt.
+          {:else}
+            Niemand hat das Wort erraten. Das Wort war <strong>{word}</strong>
+          {/if}
+        {/snippet}
+      </ResultBanner>
+    {/if}
+  </GameLayout>
+{/if}
+
+<style>
+  .setup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 24px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .setup-title {
+    margin: 0;
+    font-size: 24px;
+    line-height: 120%;
+    color: var(--text-h);
+  }
+
+  .setup-text {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-h);
+  }
+
+  .setup-players {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+    width: 100%;
+  }
+
+  .setup-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .setup-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-h);
+  }
+
+  .start-button {
+    padding: 12px 28px;
+    border-radius: 14px;
+    border: none;
+    background: var(--pink-dark);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .start-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+
+  .start-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+</style>

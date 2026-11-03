@@ -1,6 +1,6 @@
 <script lang="ts">
   interface Props {
-    players: { name: string; score: number; active: boolean }[];
+    players: { name: string; emoji: string; score: number; active: boolean }[];
   }
 
   let { players }: Props = $props();
@@ -11,6 +11,9 @@
     <div class="score-card" class:active={player.active}>
       {#if player.active}
         <span class="turn-badge">Am Zug</span>
+      {/if}
+      {#if player.emoji}
+        <span class="score-avatar" aria-hidden="true">{player.emoji}</span>
       {/if}
       <span class="score-name">{player.name}</span>
       <span class="score-value">{player.score}</span>
@@ -59,6 +62,11 @@
     padding: 2px 10px;
     border-radius: 999px;
     margin-bottom: 4px;
+  }
+
+  .score-avatar {
+    font-size: 32px;
+    line-height: 1.1;
   }
 
   .score-name {

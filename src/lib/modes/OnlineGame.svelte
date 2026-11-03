@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getRandomWord } from '../words';
-  import { letterFromKey, MAX_WRONG, type WordSlot } from '../gameRules';
+  import { letterFromKey, type WordSlot } from '../gameRules';
+  import { avatarEmoji } from '../avatars';
   import {
     getRoom,
     guessLetter,
@@ -40,6 +41,7 @@
   function scoreboardOf(view: RoomView) {
     return view.players.map((player) => ({
       name: `${player.name ?? 'Warte auf Mitspieler'}${player.seat === view.seat ? ' (du)' : ''}`,
+      emoji: avatarEmoji(player.avatar),
       score: player.score,
       active: view.status === 'playing' && view.turn === player.seat,
     }));
