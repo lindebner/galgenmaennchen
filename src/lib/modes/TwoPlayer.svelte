@@ -18,11 +18,11 @@
   import Scoreboard from '../Scoreboard.svelte';
 
   const STORAGE_KEY = 'galgenmaennchen-zwei';
-  const ROUND_SECONDS = 60;
-  const LOW_TIME_SECONDS = 10;
+  const TURN_SECONDS = 5;
+  const LOW_TIME_SECONDS = 2;
   const seats: Seat[] = [1, 2];
 
-  type GameState = 'playing' | 'won' | 'lost' | 'timeout';
+  type GameState = 'playing' | 'won' | 'lost';
 
   interface SavedState {
     word: string;
@@ -34,7 +34,7 @@
     starter: Seat;
     scores: Record<Seat, number>;
     avatars: Record<Seat, string>;
-    roundEndsAt: number;
+    turnEndsAt: number;
     usedWords: string[];
   }
 
@@ -50,7 +50,7 @@
         !parsed.scores ||
         !parsed.avatars?.[1] ||
         !parsed.avatars?.[2] ||
-        typeof parsed.roundEndsAt !== 'number' ||
+        typeof parsed.turnEndsAt !== 'number' ||
         !Array.isArray(parsed.usedWords)
       ) {
         return null;
@@ -72,7 +72,7 @@
       starter,
       scores,
       avatars: { 1: avatars[1] ?? '', 2: avatars[2] ?? '' },
-      roundEndsAt,
+      turnEndsAt,
       usedWords,
     };
     try {
@@ -96,14 +96,14 @@
   let scores = $state<Record<Seat, number>>({ 1: 0, 2: 0 });
   let avatars = $state<Record<Seat, string | null>>({ 1: null, 2: null });
   let setupDone = $state(false);
-  let roundEndsAt = $state(0);
+  let turnEndsAt = $state(0);
   let now = $state(Date.now());
   let usedWords = $state<string[]>([]);
 
   let correctLetters = $derived(new Set(word));
   let wrongLetters = $derived(wrongLettersOf(word, guessed));
-  let slots = $derived(buildSlots(word, guessed, gameState === 'lost' || gameState === 'timeout'));
-  let remainingSeconds = $derived(Math.max(0, Math.ceil((roundEndsAt - now) / 1000)));
+  let slots = $derived(buildSlots(word, guessed, gameState === 'lost'));
+  let remainingSeconds = $derived(Math.max(0, Math.ceil((turnEndsAt - now) / 1000)));
   let scoreboardPlayers = $derived(
     seats.map((seat) => ({
       name: `Spieler ${seat}`,
@@ -122,7 +122,7 @@
     wrongCount = 0;
     gameState = 'playing';
     now = Date.now();
-    roundEndsAt = now + ROUND_SECONDS * 1000;
+    turnEndsAt = now + TURN_SECONDS * 1000;
     starter = other(starter);
     turn = starter;
     saveState();
@@ -136,17 +136,24 @@
     startNewRound();
   }
 
-  function endByTimeout() {
+  function passTurnOnTimeout() {
     if (gameState !== 'playing') return;
-    gameState = 'timeout';
+    now = Date.now();
+    wrongCount += 1;
+    if (wrongCount >= MAX_WRONG) {
+      gameState = 'lost';
+    } else {
+      turn = other(turn);
+      turnEndsAt = now + TURN_SECONDS * 1000;
+    }
     saveState();
   }
 
   function guess(letter: string) {
     if (gameState !== 'playing') return;
     now = Date.now();
-    if (now >= roundEndsAt) {
-      endByTimeout();
+    if (now >= turnEndsAt) {
+      passTurnOnTimeout();
       return;
     }
     if (guessed.has(letter)) return;
@@ -168,6 +175,7 @@
         turn = other(turn);
       }
     }
+    if (gameState === 'playing') turnEndsAt = now + TURN_SECONDS * 1000;
     saveState();
   }
 
@@ -185,7 +193,7 @@
     if (!setupDone || gameState !== 'playing') return;
     const timer = setInterval(() => {
       now = Date.now();
-      if (now >= roundEndsAt) endByTimeout();
+      if (now >= turnEndsAt) passTurnOnTimeout();
     }, 250);
     return () => clearInterval(timer);
   });
@@ -201,7 +209,7 @@
     starter = saved.starter;
     scores = saved.scores;
     avatars = { 1: saved.avatars[1], 2: saved.avatars[2] };
-    roundEndsAt = saved.roundEndsAt;
+    turnEndsAt = saved.turnEndsAt;
     usedWords = saved.usedWords;
     setupDone = true;
   }
@@ -214,7 +222,7 @@
     <h2 class="setup-title">Figuren wählen</h2>
     <p class="setup-text">
       Jeder Spieler wählt eine eigene Figur. Jeder richtige Buchstabe bringt einen Punkt.
-      Pro Runde habt ihr {ROUND_SECONDS} Sekunden.
+      Pro Buchstabe habt ihr {TURN_SECONDS} Sekunden. Läuft die Zeit ab, zählt das als falscher Buchstabe.
     </p>
 
     <div class="setup-players">
@@ -258,15 +266,13 @@
     {:else}
       <ResultBanner
         tone={gameState === 'won' ? 'win' : 'lose'}
-        title={gameState === 'won' ? 'Gewonnen!' : gameState === 'timeout' ? 'Zeit abgelaufen' : 'Verloren'}
+        title={gameState === 'won' ? 'Gewonnen!' : 'Verloren'}
         nextLabel="Nächste Runde"
         onnext={startNewRound}
       >
         {#snippet detail()}
           {#if gameState === 'won'}
             Spieler {turn} hat das Wort erraten.
-          {:else if gameState === 'timeout'}
-            Die Zeit ist abgelaufen. Das Wort war <strong>{word}</strong>
           {:else}
             Niemand hat das Wort erraten. Das Wort war <strong>{word}</strong>
           {/if}
