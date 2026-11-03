@@ -51,6 +51,13 @@ const WORDS: WordEntry[] = [
   { word: 'SCHNEEKETTE', hint: 'Sorgt auf vereister Straße für Halt' },
 ];
 
+export function drawWord(used: readonly string[]): { entry: WordEntry; used: string[] } {
+  const fresh = WORDS.filter((candidate) => !used.includes(candidate.word));
+  const pool = fresh.length > 0 ? fresh : WORDS;
+  const entry = pool[Math.floor(Math.random() * pool.length)];
+  return { entry, used: fresh.length > 0 ? [...used, entry.word] : [entry.word] };
+}
+
 export function getRandomWord(): WordEntry {
   return WORDS[Math.floor(Math.random() * WORDS.length)];
 }

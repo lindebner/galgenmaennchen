@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getRandomWord } from '../words';
+  import { drawWord } from '../words';
   import {
     ALL_LETTERS,
     MAX_WRONG,
@@ -26,6 +26,7 @@
     wrongCount: number;
     gameState: GameState;
     hintsUsed?: number;
+    usedWords?: string[];
   }
 
   function loadState(): SavedState | null {
@@ -56,6 +57,7 @@
       wrongCount,
       gameState,
       hintsUsed,
+      usedWords,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -70,6 +72,7 @@
   let wrongCount = $state(0);
   let gameState = $state<GameState>('playing');
   let hintsUsed = $state(0);
+  let usedWords = $state<string[]>([]);
 
   let correctLetters = $derived(new Set(word));
   let wrongLetters = $derived(wrongLettersOf(word, guessed));
@@ -77,9 +80,10 @@
   let hintLetters = $derived(ALL_LETTERS.filter((l) => word.includes(l) && !guessed.has(l)));
 
   function startNewGame() {
-    const entry = getRandomWord();
-    word = entry.word;
-    hint = entry.hint;
+    const drawn = drawWord(usedWords);
+    usedWords = drawn.used;
+    word = drawn.entry.word;
+    hint = drawn.entry.hint;
     guessed = new Set();
     wrongCount = 0;
     hintsUsed = 0;
@@ -131,6 +135,7 @@
     wrongCount = saved.wrongCount;
     gameState = saved.gameState;
     hintsUsed = saved.hintsUsed ?? 0;
+    usedWords = saved.usedWords ?? [];
   } else {
     startNewGame();
   }
@@ -189,7 +194,7 @@
   }
 
   .help-button:hover:not(:disabled) {
-    background: rgba(167, 139, 250, 0.25);
+    background: var(--accent-bg);
     box-shadow: var(--shadow-soft);
   }
 

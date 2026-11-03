@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getRandomWord } from '../words';
+  import { drawWord } from '../words';
   import {
     MAX_WRONG,
     buildSlots,
@@ -18,9 +18,11 @@
   import Scoreboard from '../Scoreboard.svelte';
 
   const STORAGE_KEY = 'galgenmaennchen-zwei';
+  const ROUND_SECONDS = 60;
+  const LOW_TIME_SECONDS = 10;
   const seats: Seat[] = [1, 2];
 
-  type GameState = 'playing' | 'won' | 'lost';
+  type GameState = 'playing' | 'won' | 'lost' | 'timeout';
 
   interface SavedState {
     word: string;
@@ -32,6 +34,8 @@
     starter: Seat;
     scores: Record<Seat, number>;
     avatars: Record<Seat, string>;
+    roundEndsAt: number;
+    usedWords: string[];
   }
 
   function loadState(): SavedState | null {
@@ -45,7 +49,9 @@
         typeof parsed.wrongCount !== 'number' ||
         !parsed.scores ||
         !parsed.avatars?.[1] ||
-        !parsed.avatars?.[2]
+        !parsed.avatars?.[2] ||
+        typeof parsed.roundEndsAt !== 'number' ||
+        !Array.isArray(parsed.usedWords)
       ) {
         return null;
       }
@@ -66,6 +72,8 @@
       starter,
       scores,
       avatars: { 1: avatars[1] ?? '', 2: avatars[2] ?? '' },
+      roundEndsAt,
+      usedWords,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -88,10 +96,14 @@
   let scores = $state<Record<Seat, number>>({ 1: 0, 2: 0 });
   let avatars = $state<Record<Seat, string | null>>({ 1: null, 2: null });
   let setupDone = $state(false);
+  let roundEndsAt = $state(0);
+  let now = $state(Date.now());
+  let usedWords = $state<string[]>([]);
 
   let correctLetters = $derived(new Set(word));
   let wrongLetters = $derived(wrongLettersOf(word, guessed));
-  let slots = $derived(buildSlots(word, guessed, gameState === 'lost'));
+  let slots = $derived(buildSlots(word, guessed, gameState === 'lost' || gameState === 'timeout'));
+  let remainingSeconds = $derived(Math.max(0, Math.ceil((roundEndsAt - now) / 1000)));
   let scoreboardPlayers = $derived(
     seats.map((seat) => ({
       name: `Spieler ${seat}`,
@@ -102,12 +114,15 @@
   );
 
   function startNewRound() {
-    const entry = getRandomWord();
-    word = entry.word;
-    hint = entry.hint;
+    const drawn = drawWord(usedWords);
+    usedWords = drawn.used;
+    word = drawn.entry.word;
+    hint = drawn.entry.hint;
     guessed = new Set();
     wrongCount = 0;
     gameState = 'playing';
+    now = Date.now();
+    roundEndsAt = now + ROUND_SECONDS * 1000;
     starter = other(starter);
     turn = starter;
     saveState();
@@ -117,11 +132,23 @@
     setupDone = true;
     scores = { 1: 0, 2: 0 };
     starter = 2;
+    usedWords = [];
     startNewRound();
+  }
+
+  function endByTimeout() {
+    if (gameState !== 'playing') return;
+    gameState = 'timeout';
+    saveState();
   }
 
   function guess(letter: string) {
     if (gameState !== 'playing') return;
+    now = Date.now();
+    if (now >= roundEndsAt) {
+      endByTimeout();
+      return;
+    }
     if (guessed.has(letter)) return;
 
     const next = new Set(guessed);
@@ -129,9 +156,9 @@
     guessed = next;
 
     if (word.includes(letter)) {
+      scores[turn] += word.split(letter).length - 1;
       if (word.split('').every((l) => next.has(l))) {
         gameState = 'won';
-        scores[turn] += 1;
       }
     } else {
       wrongCount += 1;
@@ -154,6 +181,15 @@
     if (letter) guess(letter);
   }
 
+  $effect(() => {
+    if (!setupDone || gameState !== 'playing') return;
+    const timer = setInterval(() => {
+      now = Date.now();
+      if (now >= roundEndsAt) endByTimeout();
+    }, 250);
+    return () => clearInterval(timer);
+  });
+
   const saved = loadState();
   if (saved) {
     word = saved.word;
@@ -165,6 +201,8 @@
     starter = saved.starter;
     scores = saved.scores;
     avatars = { 1: saved.avatars[1], 2: saved.avatars[2] };
+    roundEndsAt = saved.roundEndsAt;
+    usedWords = saved.usedWords;
     setupDone = true;
   }
 </script>
@@ -174,7 +212,10 @@
 {#if !setupDone}
   <section class="setup">
     <h2 class="setup-title">Figuren wählen</h2>
-    <p class="setup-text">Jeder Spieler wählt eine eigene Figur.</p>
+    <p class="setup-text">
+      Jeder Spieler wählt eine eigene Figur. Jeder richtige Buchstabe bringt einen Punkt.
+      Pro Runde habt ihr {ROUND_SECONDS} Sekunden.
+    </p>
 
     <div class="setup-players">
       {#each seats as seat (seat)}
@@ -210,17 +251,22 @@
     <WordDisplay {slots} />
 
     {#if gameState === 'playing'}
+      <p class="timer" class:low={remainingSeconds <= LOW_TIME_SECONDS}>
+        Zeit: {remainingSeconds} s
+      </p>
       <Keyboard guessed={guessed} correct={correctLetters} onguess={guess} />
     {:else}
       <ResultBanner
         tone={gameState === 'won' ? 'win' : 'lose'}
-        title={gameState === 'won' ? 'Gewonnen!' : 'Verloren'}
+        title={gameState === 'won' ? 'Gewonnen!' : gameState === 'timeout' ? 'Zeit abgelaufen' : 'Verloren'}
         nextLabel="Nächste Runde"
         onnext={startNewRound}
       >
         {#snippet detail()}
           {#if gameState === 'won'}
-            Spieler {turn} hat das Wort erraten und bekommt einen Punkt.
+            Spieler {turn} hat das Wort erraten.
+          {:else if gameState === 'timeout'}
+            Die Zeit ist abgelaufen. Das Wort war <strong>{word}</strong>
           {:else}
             Niemand hat das Wort erraten. Das Wort war <strong>{word}</strong>
           {/if}
@@ -253,6 +299,7 @@
   .setup-text {
     margin: 0;
     font-size: 15px;
+    line-height: 150%;
     color: var(--text-h);
   }
 
@@ -275,6 +322,18 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-h);
+  }
+
+  .timer {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-h);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer.low {
+    color: #b91c1c;
   }
 
   .start-button {
