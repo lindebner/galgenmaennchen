@@ -107,6 +107,16 @@
     saveState();
   }
 
+  let hintLetters = $derived(
+    ALL_LETTERS.filter((l) => word.includes(l) && !guessed.has(l)),
+  ) as string[];
+
+  function revealHint() {
+    if (gameState !== 'playing' || hintLetters.length === 0) return;
+    const letter = hintLetters[Math.floor(Math.random() * hintLetters.length)];
+    guess(letter);
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' && gameState !== 'playing') {
       startNewGame();
@@ -222,6 +232,9 @@
             </div>
           {/each}
         </div>
+        <button class="help-button" onclick={revealHint} disabled={hintLetters.length === 0}>
+          Hilfe: Buchstabe aufdecken
+        </button>
         <p class="type-hint">Du kannst auch direkt auf der Tastatur tippen</p>
       {/if}
     </section>
@@ -467,6 +480,32 @@
   .kbd-hint {
     font-size: 12px;
     color: var(--text);
+  }
+
+  .help-button {
+    padding: 10px 24px;
+    border-radius: 14px;
+    border: 1px solid var(--secondary-border);
+    background: var(--secondary-bg);
+    color: var(--text-h);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+  }
+
+  .help-button:hover:not(:disabled) {
+    background: rgba(167, 139, 250, 0.25);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .help-button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .help-button:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   .type-hint {
