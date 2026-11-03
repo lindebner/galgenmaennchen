@@ -245,10 +245,7 @@
     font-weight: 700;
     letter-spacing: -1px;
     margin: 0 0 6px;
-    background: var(--gradient-mixed);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-h);
   }
 
   .subtitle {
