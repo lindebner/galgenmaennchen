@@ -1,4 +1,4 @@
-interface WordEntry {
+export interface WordEntry {
   word: string;
   hint: string;
 }
