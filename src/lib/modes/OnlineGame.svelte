@@ -21,6 +21,7 @@
   const PLAYER_KEY = 'galgenmaennchen-player-id';
   const ROOM_KEY = 'galgenmaennchen-room';
   const POLL_INTERVAL_MS = 2000;
+  const LOW_TIME_SECONDS = 2;
 
   function loadPlayerId(): string {
     const stored = localStorage.getItem(PLAYER_KEY);
@@ -53,6 +54,15 @@
   let room = $state<RoomView | null>(null);
   let busy = $state(false);
   let errorMessage = $state('');
+  let now = $state(Date.now());
+  let clockOffset = $state(0);
+  let refreshing = false;
+
+  let remainingSeconds = $derived(
+    room?.turnEndsAtMs == null || room.status !== 'playing'
+      ? null
+      : Math.max(0, Math.ceil((room.turnEndsAtMs - (now + clockOffset)) / 1000)),
+  );
 
   let finished = $derived(room !== null && (room.status === 'won' || room.status === 'lost'));
   let myTurn = $derived(
@@ -71,36 +81,45 @@
   let winnerName = $derived(room?.players.find((p) => p.seat === room?.lastWinner)?.name ?? '');
   let revealedWord = $derived((room?.slots ?? []).join(''));
 
-  $effect(() => {
+  function applyRoom(view: RoomView) {
+    room = view;
+    clockOffset = view.serverTimeMs - Date.now();
+    errorMessage = '';
+  }
+
+  async function refreshRoom() {
     const code = roomCode;
-    if (!code) return;
-    let active = true;
+    if (!code || refreshing) return;
+    refreshing = true;
+    try {
+      applyRoom(await getRoom(code, playerId));
+    } catch (error) {
+      errorMessage = messageFromError(error);
+    } finally {
+      refreshing = false;
+    }
+  }
 
-    const refresh = async () => {
-      try {
-        const view = await getRoom(code, playerId);
-        if (active) {
-          room = view;
-          errorMessage = '';
-        }
-      } catch (error) {
-        if (active) errorMessage = messageFromError(error);
-      }
-    };
+  $effect(() => {
+    if (!roomCode) return;
+    refreshRoom();
+    const timer = setInterval(refreshRoom, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  });
 
-    refresh();
-    const timer = setInterval(refresh, POLL_INTERVAL_MS);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+  $effect(() => {
+    if (room?.status !== 'playing' || room.turnEndsAtMs === null) return;
+    const timer = setInterval(() => {
+      now = Date.now();
+      if (remainingSeconds === 0) refreshRoom();
+    }, 250);
+    return () => clearInterval(timer);
   });
 
   function enterRoom(view: RoomView) {
     localStorage.setItem(ROOM_KEY, view.code);
-    room = view;
+    applyRoom(view);
     roomCode = view.code;
-    errorMessage = '';
   }
 
   function leaveRoom() {
@@ -114,8 +133,7 @@
     if (busy) return;
     busy = true;
     try {
-      room = await action();
-      errorMessage = '';
+      applyRoom(await action());
     } catch (error) {
       errorMessage = messageFromError(error);
     } finally {
@@ -177,6 +195,11 @@
         <p class="info">
           {myTurn ? 'Du bist am Zug.' : `${turnName} ist am Zug.`}
         </p>
+        {#if remainingSeconds !== null}
+          <p class="timer" class:low={remainingSeconds <= LOW_TIME_SECONDS}>
+            Zeit: {remainingSeconds} s
+          </p>
+        {/if}
         <Keyboard guessed={guessedLetters} correct={correctLetters} disabled={!canGuess} onguess={guess} />
       {:else}
         <ResultBanner
@@ -243,6 +266,19 @@
 
   .leave-button:hover {
     border-color: var(--accent-border);
+  }
+
+  .timer {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-h);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer.low {
+    color: #b91c1c;
   }
 
   .info {

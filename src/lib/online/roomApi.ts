@@ -17,6 +17,8 @@ export interface RoomView {
   seat: Seat | null;
   turn: Seat;
   wrongCount: number;
+  turnEndsAtMs: number | null;
+  serverTimeMs: number;
   guessed: string[];
   wrongLetters: string[];
   slots: (string | null)[];
